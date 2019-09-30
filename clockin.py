@@ -1,7 +1,8 @@
-import calendar
-import json
 import os
+import json
 import random
+import calendar
+import requests
 import urllib.request
 import urllib.error
 from datetime import datetime, timedelta, date
@@ -11,7 +12,7 @@ PASSWORD = os.environ['ABSENCE_PASS']
 
 
 class Absence:
-    BASE_URL = 'https://app.absence.io/api'
+    url = 'https://app.absence.io/api'
     WORKDAY: timedelta = timedelta(hours=8)
     TIME_TO_EAT = timedelta(hours=1)
     MAX_TIME: timedelta = timedelta(hours=6)
@@ -28,23 +29,24 @@ class Absence:
         self.holidays.update(self.get_national_holidays())
         self.holidays.update(self.get_holidays())
 
-    def get_token(self) -> str:
+    @property
+    def token(self) -> str:
         data = {
             'email': self.email,
             'password': self.password,
             'company': None,
             'trace': []
         }
+        headers = {
+            'content-type': 'application/json'
+        }
+        r = requests.post(
+            url=f'{self.url}/auth/login',
+            json=data,
+            headers=headers
+        )
 
-        body = json.dumps(data).encode('utf8')
-        req = urllib.request.Request(f'{self.BASE_URL}/auth/login',
-                                     data=body,
-                                     headers={'content-type': 'application/json'})
-        with urllib.request.urlopen(req) as response:
-            response = json.loads(response.read())
-            token = response['token']
-
-        return token
+        return r.json()['token']
 
     def _get_auth_response(self) -> dict:
         req = urllib.request.Request(f'{self.BASE_URL}/auth/{self.token}',
