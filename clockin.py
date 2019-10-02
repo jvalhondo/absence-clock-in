@@ -1,4 +1,5 @@
 import random
+from dateutil.parser import parse
 from datetime import datetime, timedelta, date
 from dateutil.rrule import rrule, DAILY
 from dateutil.relativedelta import relativedelta
@@ -62,8 +63,12 @@ class ClockIn:
 
         return self._absences
 
+    @property
+    def national_holidays(self):
+        return list(map(lambda x: parse(x).date(), self.client.authentication['holidayDates']))
+
     def one_day(self, day=None) -> None:
-        if not date(self.year, self.month, day or self.day) in self.absences:
+        if not date(self.year, self.month, day or self.day) in (self.absences + self.national_holidays):
             clock_in = datetime(
                 year=self.year,
                 month=self.month,
