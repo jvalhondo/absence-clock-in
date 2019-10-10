@@ -4,23 +4,23 @@ from datetime import datetime, timedelta, date
 from dateutil.rrule import rrule, DAILY
 from dateutil.relativedelta import relativedelta
 
-from absence import Absence
+from project.absence import Absence
 
 
 class ClockIn:
 
-    WORKDAY_HOURS = timedelta(hours=8)
-    LUNCH_TIME_SPAN = timedelta(hours=1)
-    MAX_TIME_WORKING_BEFORE_LUNCH = timedelta(hours=6).total_seconds()
+    WORKDAY_HOURS: timedelta = timedelta(hours=8)
+    LUNCH_TIME_SPAN: timedelta = timedelta(hours=1)
+    MAX_TIME_WORKING_BEFORE_LUNCH: int = timedelta(hours=6).total_seconds()
 
-    entry_hours_set = [8, 9]
-    lunch_hours_set = [13, 14, 15]
-    minutes_set = [0, 10, 20, 30, 40, 50]
+    entry_hours_set: list = [8, 9]
+    lunch_hours_set: list = [13, 14, 15]
+    minutes_set: list = [0, 10, 20, 30, 40, 50]
 
     def __init__(self, year, month, day=None):
-        self.year = year
-        self.month = month
-        self.day = day
+        self.year: int = year
+        self.month: int = month
+        self.day: int = day
 
         self._absences = None
 
@@ -82,10 +82,10 @@ class ClockIn:
             remaining_hours = self.WORKDAY_HOURS - worked_hours
             clock_out = lunch_stop + remaining_hours
             # First period (before lunch)
-            print(clock_in, lunch_break, lunch_stop, clock_out)
-            # self.absence.create_register(start=clock_in, end=lunch_break)
+            # print(clock_in, lunch_break, lunch_stop, clock_out)
+            self.client.create_register(start=clock_in, end=lunch_break)
             # Second period (after lunch)
-            # self.absence.create_register(start=lunch_stop, end=clock_out)
+            self.client.create_register(start=lunch_stop, end=clock_out)
 
     def one_month(self) -> None:
         start, end = self.time_span

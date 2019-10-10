@@ -1,89 +1,76 @@
-from datetime import datetime, date
+import requests
+import responses
+from dateutil.parser import parse
+from datetime import date, datetime
 
-import pytest
-import httpretty
-from httpretty.core import HTTPrettyRequest
-
-from clockin import Absence
+from project.clockin import ClockIn
 
 
-class TestClockIn(object):
-    @pytest.fixture()
-    def login(self, login_response):
-        def request_callback(request: HTTPrettyRequest, uri: str, response_headers: dict) -> list:
-            content_type = request.headers.get('Content-Type')
-            assert content_type == 'application/json', 'Unexpected content type'
-            return [200, response_headers, login_response]
+class TestClockIn:
 
-        httpretty.enable()
-        httpretty.register_uri(httpretty.POST, f'{Absence.BASE_URL}/auth/login', body=request_callback)
+    YEAR: int = 2019
+    MONTH: int = 8
 
-    @pytest.fixture()
-    def timespans_create(self, token):
-        def request_callback(request: HTTPrettyRequest, uri: str, response_headers: dict) -> list:
-            content_type = request.headers.get('Content-Type')
-            x_vacationtoken = request.headers.get('x-vacationtoken')
-            assert request.parsed_body['timezone'] == '+0000', 'Incorrect timezone'
-            assert datetime.strptime(request.parsed_body['start'], '%Y-%m-%dT%H:%M:%SZ')
-            assert datetime.strptime(request.parsed_body['start'], '%Y-%m-%dT%H:%M:%SZ')
-            assert content_type == 'application/json', 'Unexpected content type'
-            assert x_vacationtoken == token, 'Invalid token for authentication'
-            return [200, response_headers, ""]
+    clockin = ClockIn(YEAR, MONTH)
 
-        httpretty.enable()
-        httpretty.register_uri(httpretty.POST, f'{Absence.BASE_URL}/v2/timespans/create', body=request_callback)
+    def test_randomize(self):
+        assert ClockIn.randomize(self.clockin.lunch_hours_set) in self.clockin.lunch_hours_set
 
-    @pytest.fixture()
-    def auth_user_id(self, auth_user_id_response, token):
-        def request_callback(request: HTTPrettyRequest, uri: str, response_headers: dict) -> list:
-            content_type = request.headers.get('Content-Type')
-            assert content_type == 'application/json', 'Unexpected content type'
-            return [200, response_headers, auth_user_id_response]
+    def test_is_weekday(self):
+        dt = parse('2019-08-02')
+        assert ClockIn.is_weekday(dt)
+        dt = parse('2019-08-03')
+        assert not ClockIn.is_weekday(dt)
 
-        httpretty.enable()
-        httpretty.register_uri(httpretty.GET,
-                               f'{Absence.BASE_URL}/auth/{token}',
-                               body=request_callback)
+    def test_time_span(self):
+        start, end = date(2019, 8, 1), date(2019, 9, 1)
+        assert self.clockin.time_span == (start, end)
 
-    @pytest.fixture()
-    def absences(self, absences_response, token):
-        def request_callback(request: HTTPrettyRequest, uri: str, response_headers: dict) -> list:
-            content_type = request.headers.get('Content-Type')
-            x_vacationtoken = request.headers.get('x-vacationtoken')
-            assert content_type == 'application/json', 'Unexpected content type'
-            assert x_vacationtoken == token, 'Invalid token for authentication'
-            return [200, response_headers, absences_response]
+        clockin = ClockIn(self.YEAR, self.MONTH, 12)
+        start, end = date(2019, 8, 12), date(2019, 8, 13)
+        assert clockin.time_span == (start, end)
 
-        httpretty.enable()
-        httpretty.register_uri(httpretty.POST, f'{Absence.BASE_URL}/v2/absences', body=request_callback)
+    def test_guess_lunch_break(self):
+        clock_in = datetime(
+            year=self.YEAR,
+            month=self.MONTH,
+            day=12,
+            hour=9,
+            minute=10
+        )
+        assert (
+            (
+                (self.clockin.guess_lunch_break(clock_in) - clock_in).total_seconds()
+            ) < self.clockin.MAX_TIME_WORKING_BEFORE_LUNCH
+        )
 
-    def test_get_token(self, login, auth_user_id, token, absences):
-        absence = Absence(2019, 2)
-        assert absence.token == token, 'Token is not correct'
+    def test_absences(
+        self,
+        login_response,
+        authentication_response,
+        absence_token,
+        absences_response
+    ):
+        # token
+        responses.add(
+            responses.POST,
+            f'{self.clockin.client.url}/auth/login',
+            json=login_response,
+            status=200
+        )
+        # authentication
+        responses.add(
+            responses.GET,
+            f'{self.clockin.client.url}/auth/{absence_token}',
+            json=authentication_response,
+            status=200
+        )
+        # absences within period
+        responses.add(
+            responses.POST,
+            f'{self.clockin.client.url}/v2/absences',
+            json=absences_response,
+            status=200
+        )
 
-    @pytest.mark.parametrize('month,expected', [
-        (5, True),
-        (8, False)
-    ])
-    def test_create_register(self, login, auth_user_id, timespans_create, absences, month, expected):
-        absence = Absence(2019, month)
-        start = datetime(2019, month, 19)
-        end = datetime(2019, month, 19, 1)
-        assert absence.create_register(start, end) == expected
-
-    def test_get_user_id(self, login, auth_user_id, user_id, absences):
-        absence = Absence(2019, 5)
-        assert absence.user_id == user_id, 'User id is not correct'
-
-    def test_get_holidays(self, login, auth_user_id, absences):
-        absence = Absence(2019, 8)
-        holidays = absence.get_holidays()
-        for i, day in enumerate(range(10, 31)):
-            assert holidays[i] == date(2019, 8, day)
-
-    def test_get_national_holidays(self, login, auth_user_id, absences):
-        absence = Absence(2019, 8)
-        national_holidays = absence.get_national_holidays()
-
-        assert len(national_holidays) == 1, 'National holidays should only have one day'
-        assert national_holidays[0] == date(2019, 8, 19)
+        assert len(self.clockin.absences) == 2

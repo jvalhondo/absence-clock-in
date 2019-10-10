@@ -1,4 +1,5 @@
 import os
+import logging
 import requests
 from datetime import datetime
 from dateutil.parser import parse
@@ -65,23 +66,10 @@ class Absence:
                 }
             )
 
-        return r.status_code
+        if not r.status_code == 200:
+            logging.warning(r.text)
 
-        """
-        TODO: pending this code section
-        try:
-            with urllib.request.urlopen(r):
-                pass
-        except urllib.error.URLError as e:
-            message = e.read().decode('utf-8')
-            if e.code == 412 and message == 'Los registros no se pueden solapar':
-                print(f'Day {self.day} has register hours')
-                return False
-            else:
-                print(f'Error code {e.code} with message {message}')
-                raise
-        return True
-        """
+        return r.status_code
 
     def get_absences_within_period(self, start: str, end: str) -> list:
         r = requests.post(
