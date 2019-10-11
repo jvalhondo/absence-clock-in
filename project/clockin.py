@@ -92,3 +92,8 @@ class ClockIn:
         for dt in list(rrule(DAILY, dtstart=start, until=end))[:-1]:
             if self.is_weekday(dt):
                 self.one_day(day=dt.day)
+
+    def days_range(self, start, end) -> None:
+        for dt in list(rrule(DAILY, dtstart=start, until=end))[:-1]:
+            if self.is_weekday(dt):
+                self.one_day(day=dt.day)
