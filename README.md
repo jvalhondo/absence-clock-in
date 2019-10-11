@@ -37,9 +37,14 @@ clock_in = ClockIn(2019, 6)
 clock_in.one_month()
 ```
 
+### Using the command line
+
+```bash
+python project/commands.py
+```
+
 ## FUTURE (on develop)
 
 * Improve test
 * Cron for clock in every day
 * Funtion to clock in range
-* Command line for clock in functions
