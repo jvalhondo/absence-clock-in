@@ -5,11 +5,11 @@ verify_ssl = true
 
 [dev-packages]
 flake8 = "*"
-autopep8 = "*"
 pytest = "*"
 pytest-cov = "*"
 ipython = "*"
 responses = "*"
+black = "*"
 
 [packages]
 requests = "*"
@@ -17,3 +17,6 @@ python-dateutil = "*"
 
 [requires]
 python_version = "3.7"
+
+[pipenv]
+allow_prereleases = true
