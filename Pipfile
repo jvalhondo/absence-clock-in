@@ -9,7 +9,7 @@ pytest = "*"
 pytest-cov = "*"
 ipython = "*"
 responses = "*"
-black = "*"
+autopep8 = "*"
 
 [packages]
 requests = "*"
