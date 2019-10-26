@@ -27,7 +27,7 @@ clock_in.one_day(4)
 
 ### Clock in one month
 
-Clock in one month, It doesn't clock in on weekends, but It don't know your vacations. for example 2019-06: 
+Clock in one month, It doesn't clock in on weekends, but It don't know your vacations. for example 2019-06:
 
 ```python
 from clockin import ClockIn
@@ -37,7 +37,14 @@ clock_in = ClockIn(2019, 6)
 clock_in.one_month()
 ```
 
+### Using the command line
+
+```bash
+python project/commands.py
+```
+
 ## FUTURE (on develop)
 
 * Improve test
 * Cron for clock in every day
+* Funtion to clock in range

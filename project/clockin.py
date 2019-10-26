@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, date
 from dateutil.rrule import rrule, DAILY
 from dateutil.relativedelta import relativedelta
 
-from project.absence import Absence
+from absence import Absence
 
 
 class ClockIn:
@@ -89,6 +89,11 @@ class ClockIn:
 
     def one_month(self) -> None:
         start, end = self.time_span
+        for dt in list(rrule(DAILY, dtstart=start, until=end))[:-1]:
+            if self.is_weekday(dt):
+                self.one_day(day=dt.day)
+
+    def days_range(self, start, end) -> None:
         for dt in list(rrule(DAILY, dtstart=start, until=end))[:-1]:
             if self.is_weekday(dt):
                 self.one_day(day=dt.day)
