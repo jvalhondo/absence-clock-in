@@ -1,5 +1,5 @@
-from datetime import datetime
 import click
+from datetime import datetime
 
 from clockin import ClockIn
 
