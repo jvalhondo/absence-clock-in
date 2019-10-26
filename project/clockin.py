@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, date
 from dateutil.rrule import rrule, DAILY
 from dateutil.relativedelta import relativedelta
 
-from absence import Absence
+from project.absence import Absence
 
 
 class ClockIn:

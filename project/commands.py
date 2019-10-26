@@ -1,7 +1,7 @@
 import click
 from datetime import datetime
 
-from clockin import ClockIn
+from project.clockin import ClockIn
 
 
 @click.command()
