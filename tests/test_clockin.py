@@ -1,4 +1,3 @@
-import requests
 import responses
 from dateutil.parser import parse
 from datetime import date, datetime
@@ -44,11 +43,12 @@ class TestClockIn:
             ) < self.clockin.MAX_TIME_WORKING_BEFORE_LUNCH
         )
 
+    @responses.activate
     def test_absences(
         self,
         login_response,
-        authentication_response,
         absence_token,
+        authentication_response,
         absences_response
     ):
         # token
@@ -74,3 +74,27 @@ class TestClockIn:
         )
 
         assert len(self.clockin.absences) == 2
+
+    @responses.activate
+    def test_national_holidays(
+        self,
+        login_response,
+        absence_token,
+        authentication_response
+    ):
+        # token
+        responses.add(
+            responses.POST,
+            f'{self.clockin.client.url}/auth/login',
+            json=login_response,
+            status=200
+        )
+        # authentication
+        responses.add(
+            responses.GET,
+            f'{self.clockin.client.url}/auth/{absence_token}',
+            json=authentication_response,
+            status=200
+        )
+
+        assert len(self.clockin.national_holidays) == 3
